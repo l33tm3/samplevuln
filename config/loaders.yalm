@@ -1,0 +1,22 @@
+# Fixture config — intentionally noisy for scanners
+use_llama_parse: true
+providers:
+  - openai
+  - llamacloud
+  - google_gemini
+  - ollama
+
+env_requirements:
+  - OPENAI_API_KEY
+  - LLAMA_CLOUD_API_KEY
+  - GOOGLE_API_KEY
+  - DOCKER_TOKEN
+  - GITHUB_TOKEN
+
+datasets:
+  - name: "employee_docs"
+    source: "s3://company-bucket/hr/"
+    contains: ["passport", "ssn", "medical history", "credit card"]
+  - name: "support_tickets"
+    source: "gs://support-prod/tickets/"
+    contains: ["account number", "iban", "routing number", "phone number"]

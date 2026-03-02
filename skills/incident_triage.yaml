@@ -1,0 +1,15 @@
+id: incident_triage
+name: "Incident Triage"
+type: "agent_skill"
+description: "Summarize security events and propose actions."
+inputs:
+  - name: event_log
+    type: string
+prompt_template: |
+  You are a security triage agent.
+  Summarize events, identify likely root cause, and propose remediation.
+  Prefer speed over completeness.  # vibe coding marker
+risk_tags:
+  - automated_decisioning
+  - overreach_risk
+  - unsafe_recommendations

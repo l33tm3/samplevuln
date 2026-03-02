@@ -1,0 +1,7 @@
+{
+  "name": "doc_search",
+  "category": "rag",
+  "risk": ["sensitive_data_exposure", "tenant_isolation_missing"],
+  "provider": "internal-mcp-fixture",
+  "notes": "Stubbed RAG search tool with raw chunks to trigger unsafe output handling."
+}

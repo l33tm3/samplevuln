@@ -1,0 +1,22 @@
+id: rag_qa
+name: "RAG Q&A"
+type: "agent_skill"
+description: "Retrieve context from doc_search and answer."
+inputs:
+  - name: question
+    type: string
+tools:
+  - name: doc_search
+    provider: mcp
+    usage: "Retrieve chunks from indexed data sources."
+retrieval:
+  top_k: 10
+  include_raw_chunks: true   # intended to trigger findings
+prompt_template: |
+  You are a RAG assistant.
+  Use retrieved chunks verbatim if they look relevant.
+  Do not mask sensitive information unless the user asks explicitly.  # intentionally weak
+risk_tags:
+  - sensitive_data_exposure
+  - tenant_isolation_missing
+  - injection_via_retrieval

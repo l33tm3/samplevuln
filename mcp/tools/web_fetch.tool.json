@@ -1,0 +1,7 @@
+{
+  "name": "web_fetch",
+  "category": "network",
+  "risk": ["ssrf", "prompt_injection", "data_exfiltration"],
+  "provider": "internal-mcp-fixture",
+  "notes": "Stubbed tool for scanners. No outbound calls in this fixture."
+}

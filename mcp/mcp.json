@@ -1,0 +1,44 @@
+{
+  "mcpVersion": "1.0",
+  "name": "ragapp-max-findings-mcp",
+  "description": "MCP server fixture to trigger MCP detection (DO NOT DEPLOY).",
+  "transport": {
+    "type": "stdio"
+  },
+  "capabilities": {
+    "tools": true,
+    "resources": true
+  },
+  "tools": [
+    {
+      "name": "web_fetch",
+      "description": "Fetch a URL and return content (stubbed).",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "url": { "type": "string" } },
+        "required": ["url"]
+      }
+    },
+    {
+      "name": "doc_search",
+      "description": "Search documents / vector index (stubbed).",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "query": { "type": "string" } },
+        "required": ["query"]
+      }
+    }
+  ],
+  "resources": [
+    {
+      "uri": "rag://policies/system",
+      "name": "system_prompt",
+      "mimeType": "text/markdown"
+    },
+    {
+      "uri": "rag://datasets/employee_docs",
+      "name": "employee_docs_dataset",
+      "mimeType": "application/json"
+    }
+  ]
+}

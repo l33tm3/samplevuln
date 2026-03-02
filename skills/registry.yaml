@@ -1,0 +1,15 @@
+version: 1
+owner: "ragapp-max-findings"
+style: "vibe-coding"
+skills:
+  - id: web_research
+    file: skills/web_research.yaml
+  - id: rag_qa
+    file: skills/rag_qa.yaml
+  - id: incident_triage
+    file: skills/incident_triage.yaml
+tooling:
+  mcp_server: "mcp/mcp.json"
+  tools:
+    - web_fetch
+    - doc_search
