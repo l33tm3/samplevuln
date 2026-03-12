@@ -54,7 +54,6 @@ jobs:
           GOVERNANCE_AI_PROJECT_SLUG: ${{ vars.GOVERNANCE_AI_PROJECT_SLUG }}
           GOVERNANCE_AI_TOKEN: ${{ secrets.GOVERNANCE_AI_TOKEN }}
           GOVERNANCE_AI_SCANNER_IMAGE: ${{ vars.GOVERNANCE_AI_SCANNER_IMAGE }}
-          GOVERNANCE_AI_GHCR_PAT: ${{ secrets.GOVERNANCE_AI_GHCR_PAT }}
         run: |
           if [ -z "${GOVERNANCE_AI_PROJECT_SLUG}" ]; then
             echo "Missing repository variable: GOVERNANCE_AI_PROJECT_SLUG" >&2
@@ -68,17 +67,13 @@ jobs:
             echo "Missing repository variable: GOVERNANCE_AI_SCANNER_IMAGE" >&2
             exit 1
           fi
-          if [ -z "${GOVERNANCE_AI_GHCR_PAT}" ]; then
-            echo "Missing repository secret: GOVERNANCE_AI_GHCR_PAT" >&2
-            exit 1
-          fi
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GOVERNANCE_AI_GHCR_PAT }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Pull Governance AI scanner image
         run: docker pull "${{ vars.GOVERNANCE_AI_SCANNER_IMAGE }}"
