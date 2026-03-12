@@ -10,7 +10,7 @@ permissions:
   id-token: write
 
 env:
-  GOVERNANCE_AI_API_URL: https://governanceai.com
+  GOVERNANCE_AI_API_URL: https://app.dev.gobiernoia.cl
 
 jobs:
   governance-scan:
