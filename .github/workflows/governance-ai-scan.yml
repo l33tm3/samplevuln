@@ -12,6 +12,9 @@ permissions:
 env:
   GOVERNANCE_AI_API_URL: https://app.dev.gobiernoia.cl
 
+# Expected repo variable:
+# GOVERNANCE_AI_PROJECT_SLUG=governance
+
 jobs:
   governance-scan:
     runs-on: ubuntu-latest
@@ -26,40 +29,23 @@ jobs:
           GOVERNANCE_AI_PROJECT_SLUG: ${{ vars.GOVERNANCE_AI_PROJECT_SLUG }}
         run: |
           set -euo pipefail
-
-          test -n "${GOVERNANCE_AI_TOKEN}"
-          test -n "${GOVERNANCE_AI_PROJECT_SLUG}"
-
-          curl --fail-with-body -sS -X POST "${GOVERNANCE_AI_API_URL}/api/v1/pipeline-scans/scanner-access" \
-            -H "Authorization: Bearer ${GOVERNANCE_AI_TOKEN}" \
+          curl --fail-with-body -sS -X POST "$GOVERNANCE_AI_API_URL/api/v1/pipeline-scans/scanner-access" \
+            -H "Authorization: Bearer $GOVERNANCE_AI_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"project_slug\":\"${GOVERNANCE_AI_PROJECT_SLUG}\",\"provider\":\"github\",\"repository\":\"${GITHUB_REPOSITORY}\",\"repository_id\":\"${GITHUB_REPOSITORY_ID}\"}" \
+            -d "{\"project_slug\":\"$GOVERNANCE_AI_PROJECT_SLUG\",\"provider\":\"github\",\"repository\":\"$GITHUB_REPOSITORY\",\"repository_id\":\"$GITHUB_REPOSITORY_ID\"}" \
             -o scanner-access.json
-
-          test -s scanner-access.json
-
-      - name: Validate scanner access payload
-        run: |
-          set -euo pipefail
-
-          export SCANNER_REGISTRY=$(jq -r '.registry // ""' scanner-access.json)
-          export SCANNER_IMAGE=$(jq -r '.image // ""' scanner-access.json)
-          export SCANNER_USERNAME=$(jq -r '.username // ""' scanner-access.json)
-          export SCANNER_PASSWORD=$(jq -r '.password // ""' scanner-access.json)
-
-          test -n "$SCANNER_REGISTRY"
-          test -n "$SCANNER_IMAGE"
-          test -n "$SCANNER_USERNAME"
-          test -n "$SCANNER_PASSWORD"
 
       - name: Log in to private scanner registry
         run: |
           set -euo pipefail
-
           export SCANNER_REGISTRY=$(jq -r '.registry // ""' scanner-access.json)
+          export SCANNER_IMAGE=$(jq -r '.image // ""' scanner-access.json)
           export SCANNER_USERNAME=$(jq -r '.username // ""' scanner-access.json)
           export SCANNER_PASSWORD=$(jq -r '.password // ""' scanner-access.json)
-
+          test -n "$SCANNER_REGISTRY"
+          test -n "$SCANNER_IMAGE"
+          test -n "$SCANNER_USERNAME"
+          test -n "$SCANNER_PASSWORD"
           echo "$SCANNER_PASSWORD" | docker login "$SCANNER_REGISTRY" -u "$SCANNER_USERNAME" --password-stdin
 
       - name: Run AI scan
@@ -67,41 +53,31 @@ jobs:
           GOVERNANCE_AI_PROJECT_SLUG: ${{ vars.GOVERNANCE_AI_PROJECT_SLUG }}
         run: |
           set -euo pipefail
-
           export SCANNER_IMAGE=$(jq -r '.image // ""' scanner-access.json)
-          test -n "$SCANNER_IMAGE"
-
           docker pull "$SCANNER_IMAGE"
-
           docker run --rm \
             -v "$PWD:/workspace" \
             -w /workspace \
             "$SCANNER_IMAGE" scan \
             --path . \
             --provider github \
-            --repository "${GITHUB_REPOSITORY}" \
-            --repository-id "${GITHUB_REPOSITORY_ID}" \
-            --project-slug "${GOVERNANCE_AI_PROJECT_SLUG}" \
-            --commit-sha "${GITHUB_SHA}" \
-            --branch "${GITHUB_REF_NAME}" \
-            --trigger-type "${GITHUB_EVENT_NAME}" \
-            --external-run-id "${GITHUB_RUN_ID}" \
+            --repository "$GITHUB_REPOSITORY" \
+            --repository-id "$GITHUB_REPOSITORY_ID" \
+            --project-slug "$GOVERNANCE_AI_PROJECT_SLUG" \
+            --commit-sha "$GITHUB_SHA" \
+            --branch "$GITHUB_REF_NAME" \
+            --trigger-type "$GITHUB_EVENT_NAME" \
+            --external-run-id "$GITHUB_RUN_ID" \
             --external-job-id "governance-scan" \
-            --scanner-version "${GITHUB_SHA}" \
+            --scanner-version "$GITHUB_SHA" \
             --format json > scan.json
-
-          test -s scan.json
 
       - name: Send results to Governance AI intake
         env:
           GOVERNANCE_AI_TOKEN: ${{ secrets.GOVERNANCE_AI_TOKEN }}
         run: |
           set -euo pipefail
-
-          curl --fail-with-body -sS -X POST "${GOVERNANCE_AI_API_URL}/api/v1/pipeline-scans/intake" \
-            -H "Authorization: Bearer ${GOVERNANCE_AI_TOKEN}" \
-            -H "Content-Type: application/json" \
-            --data-binary @scan.json
-
+          curl --fail-with-body -sS -X POST "$GOVERNANCE_AI_API_URL/api/v1/pipeline-scans/intake" \
+            -H "Authorization: Bearer $GOVERNANCE_AI_TOKEN" \
             -H "Content-Type: application/json" \
             --data-binary @scan.json
