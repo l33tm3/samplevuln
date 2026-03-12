@@ -4,13 +4,21 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "sample_repo/**"
-      - "sdk/python/**"
+      - "app.py"
+      - "src/**"
+      - "prompts/**"
+      - "skills/**"
+      - "mcp/**"
+      - "pyproject.toml"
       - ".github/workflows/governance-ai-scan.yml"
   pull_request:
     paths:
-      - "sample_repo/**"
-      - "sdk/python/**"
+      - "app.py"
+      - "src/**"
+      - "prompts/**"
+      - "skills/**"
+      - "mcp/**"
+      - "pyproject.toml"
       - ".github/workflows/governance-ai-scan.yml"
 
 permissions:
@@ -37,6 +45,7 @@ jobs:
         env:
           GOVERNANCE_AI_PROJECT_SLUG: ${{ vars.GOVERNANCE_AI_PROJECT_SLUG }}
           GOVERNANCE_AI_TOKEN: ${{ secrets.GOVERNANCE_AI_TOKEN }}
+          GOVERNANCE_AI_SCANNER_PIP_SPEC: ${{ vars.GOVERNANCE_AI_SCANNER_PIP_SPEC }}
         run: |
           if [ -z "${GOVERNANCE_AI_PROJECT_SLUG}" ]; then
             echo "Missing repository variable: GOVERNANCE_AI_PROJECT_SLUG" >&2
@@ -46,18 +55,28 @@ jobs:
             echo "Missing repository secret: GOVERNANCE_AI_TOKEN" >&2
             exit 1
           fi
+          if [ ! -d "./sdk/python" ] && [ -z "${GOVERNANCE_AI_SCANNER_PIP_SPEC}" ]; then
+            echo "Missing scanner source: add ./sdk/python or set repository variable GOVERNANCE_AI_SCANNER_PIP_SPEC" >&2
+            exit 1
+          fi
 
       - name: Install Governance AI scanner
+        env:
+          GOVERNANCE_AI_SCANNER_PIP_SPEC: ${{ vars.GOVERNANCE_AI_SCANNER_PIP_SPEC }}
         run: |
           python -m pip install --upgrade pip
-          pip install ./sdk/python
+          if [ -d "./sdk/python" ]; then
+            pip install ./sdk/python
+          else
+            pip install "${GOVERNANCE_AI_SCANNER_PIP_SPEC}"
+          fi
 
-      - name: Run AI scan on sample repo
+      - name: Run AI scan on repository
         env:
           GOVERNANCE_AI_PROJECT_SLUG: ${{ vars.GOVERNANCE_AI_PROJECT_SLUG }}
         run: |
           governance-ai scan \
-            --path ./sample_repo \
+            --path . \
             --provider github \
             --repository "${GITHUB_REPOSITORY}" \
             --repository-id "${GITHUB_REPOSITORY_ID}" \
