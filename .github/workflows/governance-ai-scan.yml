@@ -10,7 +10,7 @@ permissions:
   id-token: write
 
 env:
-  GOVERNANCE_AI_API_URL: https://api.governanceai.com
+  GOVERNANCE_AI_API_URL: https://governanceai.com
 
 jobs:
   governance-scan:
