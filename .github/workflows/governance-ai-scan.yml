@@ -3,35 +3,7 @@ name: Governance AI Pipeline Scan
 on:
   workflow_dispatch:
   push:
-    paths:
-      - "**/*.py"
-      - "**/*.js"
-      - "**/*.ts"
-      - "**/*.tsx"
-      - "**/*.jsx"
-      - "**/*.json"
-      - "**/*.toml"
-      - "**/*.yaml"
-      - "**/*.yml"
-      - "**/*.md"
-      - "pyproject.toml"
-      - "package.json"
-      - ".github/workflows/governance-ai-scan.yml"
   pull_request:
-    paths:
-      - "**/*.py"
-      - "**/*.js"
-      - "**/*.ts"
-      - "**/*.tsx"
-      - "**/*.jsx"
-      - "**/*.json"
-      - "**/*.toml"
-      - "**/*.yaml"
-      - "**/*.yml"
-      - "**/*.md"
-      - "pyproject.toml"
-      - "package.json"
-      - ".github/workflows/governance-ai-scan.yml"
 
 permissions:
   contents: read
@@ -48,35 +20,34 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Validate pipeline configuration
+      - name: Get scanner access from Governance AI
         env:
-          GOVERNANCE_AI_PROJECT_SLUG: ${{ vars.GOVERNANCE_AI_PROJECT_SLUG }}
           GOVERNANCE_AI_TOKEN: ${{ secrets.GOVERNANCE_AI_TOKEN }}
+          GOVERNANCE_AI_PROJECT_SLUG: ${{ vars.GOVERNANCE_AI_PROJECT_SLUG }}
         run: |
-          if [ -z "${GOVERNANCE_AI_PROJECT_SLUG}" ]; then
-            echo "Missing repository variable: GOVERNANCE_AI_PROJECT_SLUG" >&2
-            exit 1
-          fi
-          if [ -z "${GOVERNANCE_AI_TOKEN}" ]; then
-            echo "Missing repository secret: GOVERNANCE_AI_TOKEN" >&2
-            exit 1
-          fi
+          curl --fail-with-body -sS -X POST "${GOVERNANCE_AI_API_URL}/api/v1/pipeline-scans/scanner-access" \
+            -H "Authorization: Bearer ${GOVERNANCE_AI_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{\"project_slug\":\"${GOVERNANCE_AI_PROJECT_SLUG}\",\"provider\":\"github\",\"repository\":\"${GITHUB_REPOSITORY}\",\"repository_id\":\"${GITHUB_REPOSITORY_ID}\"}" \
+            > scanner-access.json
 
-      - name: Install Governance AI scanner
+      - name: Log in to private scanner registry
         run: |
-          python -m pip install --upgrade pip
-          pip install governance-guardrails-sdk
+          export SCANNER_REGISTRY=$(python -c "import json; print(json.load(open('scanner-access.json'))['registry'])")
+          export SCANNER_USERNAME=$(python -c "import json; print(json.load(open('scanner-access.json'))['username'])")
+          export SCANNER_PASSWORD=$(python -c "import json; print(json.load(open('scanner-access.json'))['password'])")
+          echo "$SCANNER_PASSWORD" | docker login "$SCANNER_REGISTRY" -u "$SCANNER_USERNAME" --password-stdin
 
       - name: Run AI scan
         env:
           GOVERNANCE_AI_PROJECT_SLUG: ${{ vars.GOVERNANCE_AI_PROJECT_SLUG }}
         run: |
-          governance-ai scan \
+          export SCANNER_IMAGE=$(python -c "import json; print(json.load(open('scanner-access.json'))['image'])")
+          docker pull "$SCANNER_IMAGE"
+          docker run --rm \
+            -v "$PWD:/workspace" \
+            -w /workspace \
+            "$SCANNER_IMAGE" scan \
             --path . \
             --provider github \
             --repository "${GITHUB_REPOSITORY}" \
