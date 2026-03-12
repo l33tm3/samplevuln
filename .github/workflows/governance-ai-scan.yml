@@ -10,7 +10,7 @@ permissions:
   id-token: write
 
 env:
-  GOVERNANCE_AI_API_URL: https://nummular-nonidyllic-jayla.ngrok-free.dev
+  GOVERNANCE_AI_API_URL: https://api.governanceai.com
 
 jobs:
   governance-scan:
