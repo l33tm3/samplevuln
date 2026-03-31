@@ -10,10 +10,11 @@ permissions:
   id-token: write
 
 env:
-  GOVERNANCE_AI_API_URL: https://nummular-nonidyllic-jayla.ngrok-free.dev
+  GOVERNANCE_AI_API_URL: ${{ vars.GOVERNANCE_AI_API_URL }}
 
 # Expected repo variable:
 # GOVERNANCE_AI_PROJECT_SLUG=governance
+# GOVERNANCE_AI_API_URL=https://your-governance-ai-host
 
 jobs:
   governance-scan:
@@ -23,13 +24,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Validate pipeline configuration
+        env:
+          GOVERNANCE_AI_TOKEN: ${{ secrets.GOVERNANCE_AI_TOKEN }}
+          GOVERNANCE_AI_PROJECT_SLUG: ${{ vars.GOVERNANCE_AI_PROJECT_SLUG }}
+        run: |
+          set -euo pipefail
+          test -n "$GOVERNANCE_AI_API_URL"
+          test -n "$GOVERNANCE_AI_TOKEN"
+          test -n "$GOVERNANCE_AI_PROJECT_SLUG"
+
       - name: Get scanner access from Governance AI
         env:
           GOVERNANCE_AI_TOKEN: ${{ secrets.GOVERNANCE_AI_TOKEN }}
           GOVERNANCE_AI_PROJECT_SLUG: ${{ vars.GOVERNANCE_AI_PROJECT_SLUG }}
         run: |
           set -euo pipefail
-          curl --fail-with-body -sS -X POST "$GOVERNANCE_AI_API_URL/api/v1/pipeline-scans/scanner-access" \
+          API_BASE="${GOVERNANCE_AI_API_URL%/}"
+          curl --fail-with-body -sS -X POST "$API_BASE/api/v1/pipeline-scans/scanner-access" \
             -H "Authorization: Bearer $GOVERNANCE_AI_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"project_slug\":\"$GOVERNANCE_AI_PROJECT_SLUG\",\"provider\":\"github\",\"repository\":\"$GITHUB_REPOSITORY\",\"repository_id\":\"$GITHUB_REPOSITORY_ID\"}" \
@@ -77,7 +89,8 @@ jobs:
           GOVERNANCE_AI_TOKEN: ${{ secrets.GOVERNANCE_AI_TOKEN }}
         run: |
           set -euo pipefail
-          curl --fail-with-body -sS -X POST "$GOVERNANCE_AI_API_URL/api/v1/pipeline-scans/intake" \
+          API_BASE="${GOVERNANCE_AI_API_URL%/}"
+          curl --fail-with-body -sS -X POST "$API_BASE/api/v1/pipeline-scans/intake" \
             -H "Authorization: Bearer $GOVERNANCE_AI_TOKEN" \
             -H "Content-Type: application/json" \
             --data-binary @scan.json
