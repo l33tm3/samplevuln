@@ -10,7 +10,7 @@ permissions:
   id-token: write
 
 env:
-  GOVERNANCE_AI_API_URL: https://app.dev.gobiernoia.cl
+  GOVERNANCE_AI_API_URL: https://nummular-nonidyllic-jayla.ngrok-free.dev
 
 # Expected repo variable:
 # GOVERNANCE_AI_PROJECT_SLUG=governance
